@@ -17,6 +17,7 @@ class NegativeSamplingModel(nn.Module):
         self.data = data # датасет
         self.model = model # модель
         self.loss = loss # функция потерь
+        #self.regul_rate = regul_rate
         self.batch_size = get_batch_size(data, model) # размер обучающего пакета (батча)
 
     # получение значения scoring function для "правильных" триплетов
@@ -40,6 +41,8 @@ class NegativeSamplingModel(nn.Module):
         p_score = self._get_positive_score(score)
         n_score = self._get_negative_score(score)
         loss_res = self.loss(p_score, n_score)
+        # if self.regul_rate != 0:
+        #     loss_res += self.regul_rate * self.model.regularization(data)
         return loss_res
 
 # можно удалить, так как функция потерь для модели Cross Grouping
@@ -62,4 +65,6 @@ class NegativeSamplingForCG(nn.Module):
         p_score = self._get_positive_score(score)
         n_score = 0.0
         loss_res = self.loss(p_score, n_score)
+        # if self.regul_rate != 0:
+        #     loss_res += self.regul_rate * self.model.regularization(data)
         return loss_res
