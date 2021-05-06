@@ -78,10 +78,7 @@ class BaseTrainer(ABC):
             use_gpu=False
         )
         # Если модель содержит в себе множество перекрестных ссылок
-        if 'InsType' in dataset:
-            tester.run_link_prediction(score_tail=False, type_constrain=False)
-        else:
-            tester.run_link_prediction(type_constrain=False)
+        tester.run_link_prediction(type_constrain=False)
 
     # подгонка модели (общая), подробнее ниже в каждом классе-наследнике
     def fit(self, neg_model, optimizer, data):
@@ -130,9 +127,9 @@ class JoieTrainer(BaseTrainer):
 
         # инициализация объектов-оптимизаторов для внутренних моделей
         self.intra_view_optimizers = [
-            Optimizer(model=self.intra_view_neg_models[0], learning_rate=0.01, type = 'Adagrad'), # фактологической
-            Optimizer(model=self.intra_view_neg_models[1], learning_rate=0.01, type = 'Adagrad'), # онтологической
-            Optimizer(model=self.intra_view_neg_models[2], learning_rate=0.01, type='Adagrad')  # иерархической
+            Optimizer(model=self.intra_view_neg_models[0], learning_rate=0.002, type = 'Adagrad'), # фактологической
+            Optimizer(model=self.intra_view_neg_models[1], learning_rate=0.098, type = 'Adagrad'), # онтологической
+            Optimizer(model=self.intra_view_neg_models[2], learning_rate=0.098, type='Adagrad')  # иерархической
             # последняя для JOIE опциональна, лучше ее вынести
         ]
 
@@ -140,7 +137,7 @@ class JoieTrainer(BaseTrainer):
         # по статье ищем минимум ЦФ методом стохастического градиентного спуска
         self.cross_view_optimizer = Optimizer(
             self.cross_view_neg_model,
-            learning_rate=0.01,
+            learning_rate=0.1,
             type = 'Adam'
         )
 
@@ -148,14 +145,14 @@ class JoieTrainer(BaseTrainer):
         # по статье ищем минимум ЦФ методом стохастического градиентного спуска
         self.main_intra_view_optimizer = Optimizer(
             model=self.intra_view_neg_models[0],
-            learning_rate=0.01,
+            learning_rate=0.1,
             type = 'Adam'
         )
 
         # общий JOIE-оптимизатор
         self.joie_optimizer = Optimizer(
             self.intra_view_neg_models[0],
-            learning_rate=0.01,
+            learning_rate=0.1,
             type='Adam'
         )
 
@@ -237,70 +234,70 @@ class JoieTrainer(BaseTrainer):
             self.save_model(model) # сохранение параметров модели (результатов обучения)
             self.test_model(model) # сохранение результатов тестирования модели
 
-class UnitTrainer(BaseTrainer):
-    def __init__(self, unit_models, data, **kwargs):
-        super().__init__(**kwargs)
-        self.data = data
-        # функция потерь для TransE
-        # лучше реализовать выбор в зависимости от названия модели
-        # и желательно чтобы в классе-модели был конструктор,
-        # ссылающийся на класс потери данного типа
-        # либо связать эти два класса иначе
-        self.unit_loss = MarginLoss()
-        # модель подается в виде списка из одного элемента
-        # мб лучше просто ссылкой на объект
-        self.unit_models = unit_models
-        # инициализируем объект класса моделей с "неправильным" триплетом
-        # в данном случае можно без цикла, если модель бы передавалась не в вивде списка
-        self.unit_neg_models = [NegativeSamplingModel(
-            model=model,
-            loss=model.loss(),
-            data=data
-        ) for model in self.unit_models]
-
-        # Оптимизатор для данной модели
-        self.unit_optimizers = [
-            Optimizer(model=self.unit_neg_models[0], learning_rate=1.0),
-        ]
-
-    def train_one_base_epoch(self, data):
-        # инициализация модели, модели с "неправильными" триплетами и оптимизатора
-        m = self.unit_models[0]
-        m_neg = self.unit_neg_models[0]
-        m_opt = self.unit_optimizers[0]
-        # генерируем батч на эпоху
-        batches = data.gen_batches(
-            file_name=m.file_name,
-            nbatches=m.nbatches
-        )
-        # логирование информации о батчах, потерях и обучение одной эпохи
-        log.info('%s: batch_size %s',
-                 m.__class__.__name__,
-                 get_batch_size(data, m))
-        _loss = self.train_one_epoch(
-            batches, m_neg, m_opt
-        )
-        log.info('Current loss for %s: %s',
-                 m.file_name, _loss)
-
-        return _loss
-
-    # подгонка параметров
-    def fit(self, *args):
-        # инициализация модели и данных
-        m = self.unit_neg_models[0]
-        d = self.data
-        # сколько раз обучаем модель
-        training_range = tqdm(range(self.train_times))
-        # на каждой эпохе
-        for epoch in training_range:
-            # потери базовой модели в одной эпохе
-            unit_loss = self.train_one_base_epoch(d)
-            # откат к исходному состоянию оптимизатора,
-            # с которым все валится
-            self.unit_optimizers[0].backprop(loss=unit_loss)
-            # логирование
-            log.info('Current loss for Base model at %s epoch: %s',
-                     epoch, unit_loss)
-        self.save_model(m)
-        self.test_model(m)
+# class UnitTrainer(BaseTrainer):
+#     def __init__(self, unit_models, data, **kwargs):
+#         super().__init__(**kwargs)
+#         self.data = data
+#         # функция потерь для TransE
+#         # лучше реализовать выбор в зависимости от названия модели
+#         # и желательно чтобы в классе-модели был конструктор,
+#         # ссылающийся на класс потери данного типа
+#         # либо связать эти два класса иначе
+#         self.unit_loss = MarginLoss()
+#         # модель подается в виде списка из одного элемента
+#         # мб лучше просто ссылкой на объект
+#         self.unit_models = unit_models
+#         # инициализируем объект класса моделей с "неправильным" триплетом
+#         # в данном случае можно без цикла, если модель бы передавалась не в вивде списка
+#         self.unit_neg_models = [NegativeSamplingModel(
+#             model=model,
+#             loss=model.loss(),
+#             data=data
+#         ) for model in self.unit_models]
+#
+#         # Оптимизатор для данной модели
+#         self.unit_optimizers = [
+#             Optimizer(model=self.unit_neg_models[0], learning_rate=1.0),
+#         ]
+#
+#     def train_one_base_epoch(self, data):
+#         # инициализация модели, модели с "неправильными" триплетами и оптимизатора
+#         m = self.unit_models[0]
+#         m_neg = self.unit_neg_models[0]
+#         m_opt = self.unit_optimizers[0]
+#         # генерируем батч на эпоху
+#         batches = data.gen_batches(
+#             file_name=m.file_name,
+#             nbatches=m.nbatches
+#         )
+#         # логирование информации о батчах, потерях и обучение одной эпохи
+#         log.info('%s: batch_size %s',
+#                  m.__class__.__name__,
+#                  get_batch_size(data, m))
+#         _loss = self.train_one_epoch(
+#             batches, m_neg, m_opt
+#         )
+#         log.info('Current loss for %s: %s',
+#                  m.file_name, _loss)
+#
+#         return _loss
+#
+#     # подгонка параметров
+#     def fit(self, *args):
+#         # инициализация модели и данных
+#         m = self.unit_neg_models[0]
+#         d = self.data
+#         # сколько раз обучаем модель
+#         training_range = tqdm(range(self.train_times))
+#         # на каждой эпохе
+#         for epoch in training_range:
+#             # потери базовой модели в одной эпохе
+#             unit_loss = self.train_one_base_epoch(d)
+#             # откат к исходному состоянию оптимизатора,
+#             # с которым все валится
+#             self.unit_optimizers[0].backprop(loss=unit_loss)
+#             # логирование
+#             log.info('Current loss for Base model at %s epoch: %s',
+#                      epoch, unit_loss)
+#         self.save_model(m)
+#         self.test_model(m)

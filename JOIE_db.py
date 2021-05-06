@@ -3,7 +3,7 @@ import joie.openke as openke
 from joie.models import CrossViewTransformation, CrossViewGrouping
 from joie.openke.config import Trainer, Tester
 from joie.models import TransE, DistMult, HolE
-from joie.loss import MarginLoss
+from joie.loss import MarginLoss, SoftPlusLoss
 from joie.openke.module.strategy import NegativeSampling
 from joie.openke.data import TrainDataLoader, TestDataLoader
 from joie.trainer import JoieTrainer
@@ -67,7 +67,7 @@ ha_ent_emb, ha_rel_emb = init_emb(
 ###############################################################################
 common_params = {
     'p_norm': 1.0, # евклидова норма (1 или 2) для scoring functions
-    'margin': 1.0,
+    'margin': 0.5,
 }
 
 model_insnet = TransE(
@@ -76,7 +76,7 @@ model_insnet = TransE(
     entity_emb=instance_ent_emb,
     rel_emb=instance_rel_emb,
     loss=MarginLoss,
-    d1=300, d2=50,
+    d1=200, d2=200,
     **common_params
 )
 
@@ -86,7 +86,7 @@ model_ontonet = TransE(
     nbatches=10,
     entity_emb=ontology_ent_emb,
     rel_emb=ontology_rel_emb,
-    d1=300, d2=50,
+    d1=200, d2=200,
     loss=MarginLoss,
     **common_params
 )
@@ -97,20 +97,20 @@ model_ha = CrossViewGrouping(
     nbatches=10,
     entity_emb=ha_ent_emb,
     concept_emb=ha_ent_emb,
-    d1=300, d2=50,
+    d1=200, d2=200,
     loss=MarginLoss,
     **common_params
 )
 ###############################################################################
 #                              CROSS-VIEW MODEL
 ###############################################################################
-model_cvt = CrossViewTransformation(
+model_cvt = CrossViewGrouping(
     file_name='db_InsType_train.txt',
     nbatches=10,
     entity_emb=instype_ent_emb,
     concept_emb=instype_ent_emb,
     loss=MarginLoss,
-    d1=50, d2=50,
+    d1=200, d2=200,
     **common_params
 )
 ##############################################################################
@@ -121,7 +121,7 @@ JoieTrainer(
     #intra_view_models=[model_insnet],
     intra_view_models=[model_insnet, model_ontonet, model_ha],
     cross_view_model=model_cvt,
-    train_times=1,
+    train_times=120,
     save=True,
     path_prefix='./joie/data/db',
 ).fit()

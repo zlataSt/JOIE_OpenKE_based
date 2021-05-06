@@ -212,28 +212,28 @@ class LoadData:
             t[i] = triplet[2]
 
             # случайная величина
-            # random_val = random()
+            random_val = random()
             # # # "неправильные" триплеты (negative, corrupted triplets)
             # # # по идее оба флага замены "головы" и "хвоста" не могут быть True
             # # # так как мы меняем либо одно, либо другое
-            # if self.gen_corrupted_head or self.gen_corrupted_tail:
-            #     # вероятность того что сменим сущность каждого типа = 0.5
-            #     if random_val < 0.5:
-            #         h[i + batch_size] = self.neg_entity(h[i], file)
-            #     else:
-            #         t[i + batch_size] = self.neg_entity(t[i], file)
-            # меняем "голову"
-            # elif self.gen_corrupted_head:
-            #     h[i + batch_size] = self.neg_entity(h[i], file)
-            #     t[i + batch_size] = t[i]
-            # # меняем "хвост"
-            # elif self.gen_corrupted_tail:
-            #     h[i + batch_size] = h[i]
-                # создаем "неправильный" триплет для перекрестных ссылок
-                # можем сменить только одну сущность
-                # if 'InsType' in file:
-                #     t[i + batch_size] = self.neg_entity(t[i], 'ontology_files')
-            # r[i + batch_size] = r[i]
+            if self.gen_corrupted_head or self.gen_corrupted_tail:
+                # вероятность того что сменим сущность каждого типа = 0.5
+                if random_val < 0.5:
+                    h[i + batch_size] = self.neg_entity(h[i], file)
+                else:
+                    t[i + batch_size] = self.neg_entity(t[i], file)
+            #меняем "голову"
+            elif self.gen_corrupted_head:
+                h[i + batch_size] = self.neg_entity(h[i], file)
+                t[i + batch_size] = t[i]
+            # меняем "хвост"
+            elif self.gen_corrupted_tail:
+                h[i + batch_size] = h[i]
+                #создаем "неправильный" триплет для перекрестных ссылок
+                #можем сменить только одну сущность
+                if 'InsType' in file:
+                    t[i + batch_size] = self.neg_entity(t[i], 'ontology_files')
+            r[i + batch_size] = r[i]
         return {
             'batch_h': h,
             'batch_r': r,
@@ -366,13 +366,21 @@ class LoadData:
             with open(f'{self.path_prefix}/{_dataset}/test2id.txt', 'w', encoding = 'utf8') as f:
                 f.write(f'{len(test_data)}\n')
                 for head, rel, tail in test_data:
-                    f.write(f'{head}\t{tail}\t{rel}\n')
+                    border = self.get_entities_size(file)
+                    if _dataset == 'InsType' and head > border-1:
+                        f.write(f'{head-border}\t{tail}\t{rel}\n')
+                    else:
+                        f.write(f'{head}\t{tail}\t{rel}\n')
 
             # файл для валидации с индексами элементов триплетов
             with open(f'{self.path_prefix}/{_dataset}/valid2id.txt', 'w', encoding = 'utf8') as f:
                 f.write(f'{len(valid_data)}\n')
                 for head, rel, tail in valid_data:
-                    f.write(f'{head}\t{tail}\t{rel}\n')
+                    border = self.get_entities_size(file)
+                    if _dataset == 'InsType' and head > border-1:
+                        f.write(f'{head-border}\t{tail}\t{rel}\n')
+                    else:
+                        f.write(f'{head}\t{tail}\t{rel}\n')
 
     # функция для получения количества сущностей
     def get_entities_size(self, file_name):
