@@ -1,4 +1,5 @@
 import logging
+
 import torch
 
 log = logging.getLogger(__name__)
@@ -6,19 +7,19 @@ log = logging.getLogger(__name__)
 
 class Optimizer:
     def __init__(
-            self, model, # инициализация объекта класса (оптимизатора)
+            self, model,  # инициализация объекта класса (оптимизатора)
             # вида оптимизатора
-            learning_rate = 0.1, # скорость обучения
-            lr_decay = 0.0, # затухание скорости обучения
-            weight_decay = 0.0,
-            type = 'Adam'
+            learning_rate=0.1,  # скорость обучения
+            lr_decay=0.0,  # затухание скорости обучения
+            weight_decay=0.0,
+            type='Adam'
     ):
         self.params = list(filter(lambda p: p.requires_grad, model.parameters()))
         if 'InsType' in model.model.file_name:
             self.params = filter(
                 lambda obj: (
-                    obj[1].requires_grad and
-                    obj[0] != 'model.concept_emb.weight'
+                        obj[1].requires_grad and
+                        obj[0] != 'model.concept_emb.weight'
                 ),
                 model.named_parameters()
             )
@@ -40,7 +41,7 @@ class Optimizer:
                 self.params,
                 lr=learning_rate,
                 weight_decay=weight_decay,
-                amsgrad=True # оптимизатор AMSGrad - это улучшенный вариант оптимизатора Адам
+                amsgrad=True  # оптимизатор AMSGrad - это улучшенный вариант оптимизатора Адам
                 # включаем его проставив True при вызове метода, реализующего оптимизатор Адам
             )
         elif type == 'SGD':
@@ -55,8 +56,8 @@ class Optimizer:
                  model.model.file_name, type, learning_rate)
 
     # возвращение оптимизатора в исходное состояние
-    def backprop(self, loss, grad_clip = 2.0):
-        self.optimizer.zero_grad() # приравниваем градиенты к нулю
+    def backprop(self, loss, grad_clip=2.0):
+        self.optimizer.zero_grad()  # приравниваем градиенты к нулю
         loss.backward(retain_graph=True)
         torch.nn.utils.clip_grad_norm_(self.params, grad_clip)
-        self.optimizer.step() # производим один шаг оптимизации ЦФ
+        self.optimizer.step()  # производим один шаг оптимизации ЦФ

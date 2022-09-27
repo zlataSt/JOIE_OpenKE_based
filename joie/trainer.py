@@ -1,15 +1,15 @@
 import logging
+from abc import ABC
+
 import numpy as np
 import torch
-from abc import ABC
+from torch.autograd import Variable
 from tqdm import tqdm
 
-from torch.autograd import Variable
-
-from .negative_sampling import NegativeSamplingModel, NegativeSamplingForCG
-from .loss import IntraViewModelLoss, JoieLoss, MarginLoss
-from .openke.data import TestDataLoader
+from .loss import IntraViewModelLoss, JoieLoss
+from .negative_sampling import NegativeSamplingModel
 from .openke.config import Tester
+from .openke.data import TestDataLoader
 from .optimizer import Optimizer
 from .utils import get_batch_size
 

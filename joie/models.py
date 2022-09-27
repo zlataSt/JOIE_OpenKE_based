@@ -28,14 +28,14 @@ class BaseModel(nn.Module):
 
     def log_module_info(self, model_name):
         log.info('Initializing %s model with parameters:\n'
-            'file_name: %s \n'
-            'd1: %s \n'
-            'd2: %s \n'
-            'margin: %s \n'
-            'p_norm: %s \n',
-            model_name, self.file_name,
-            self.d1, self.d2,
-            self.margin, self.p_norm)
+                 'file_name: %s \n'
+                 'd1: %s \n'
+                 'd2: %s \n'
+                 'margin: %s \n'
+                 'p_norm: %s \n',
+                 model_name, self.file_name,
+                 self.d1, self.d2,
+                 self.margin, self.p_norm)
 
     def calc_loss(self, h, r, t, mode=None):
         raise NotImplemented

@@ -1,4 +1,5 @@
 import logging
+
 import torch.nn as nn
 
 from joie.utils import get_batch_size
@@ -14,21 +15,21 @@ class NegativeSamplingModel(nn.Module):
     ):
         # инициализация объекта класса
         super(NegativeSamplingModel, self).__init__()
-        self.data = data # датасет
-        self.model = model # модель
-        self.loss = loss # функция потерь
-        #self.regul_rate = regul_rate
-        self.batch_size = get_batch_size(data, model) # размер обучающего пакета (батча)
+        self.data = data  # датасет
+        self.model = model  # модель
+        self.loss = loss  # функция потерь
+        # self.regul_rate = regul_rate
+        self.batch_size = get_batch_size(data, model)  # размер обучающего пакета (батча)
 
     # получение значения scoring function для "правильных" триплетов
     def _get_positive_score(self, score):
-        positive_score = score[:self.batch_size] # срез по "правильным" триплетам
+        positive_score = score[:self.batch_size]  # срез по "правильным" триплетам
         positive_score = positive_score.view(-1, self.batch_size).permute(1, 0)
         return positive_score
 
     # получение значения scoring function для "неправильных" триплетов
     def _get_negative_score(self, score):
-        negative_score = score[self.batch_size:] # срез по "неправильным" триплетам
+        negative_score = score[self.batch_size:]  # срез по "неправильным" триплетам
         negative_score = negative_score.view(-1, self.batch_size).permute(1, 0)
         return negative_score
 
@@ -44,6 +45,7 @@ class NegativeSamplingModel(nn.Module):
         # if self.regul_rate != 0:
         #     loss_res += self.regul_rate * self.model.regularization(data)
         return loss_res
+
 
 # можно удалить, так как функция потерь для модели Cross Grouping
 # вычисляется на основе расстояния между сущностью и концептом

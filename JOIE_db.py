@@ -1,11 +1,8 @@
 import logging
-import joie.openke as openke
-from joie.models import CrossViewTransformation, CrossViewGrouping
-from joie.openke.config import Trainer, Tester
-from joie.models import TransE, DistMult, HolE
-from joie.loss import MarginLoss, SoftPlusLoss
-from joie.openke.module.strategy import NegativeSampling
-from joie.openke.data import TrainDataLoader, TestDataLoader
+
+from joie.loss import MarginLoss
+from joie.models import CrossViewGrouping
+from joie.models import TransE
 from joie.trainer import JoieTrainer
 from joie.utils import load_data, init_emb
 
@@ -66,7 +63,7 @@ ha_ent_emb, ha_rel_emb = init_emb(
 #                             INTRA-VIEW MODEL
 ###############################################################################
 common_params = {
-    'p_norm': 1.0, # евклидова норма (1 или 2) для scoring functions
+    'p_norm': 1.0,  # евклидова норма (1 или 2) для scoring functions
     'margin': 0.5,
 }
 
@@ -114,11 +111,11 @@ model_cvt = CrossViewGrouping(
     **common_params
 )
 ##############################################################################
-  #                         UNITED JOIE MODEL
+#                         UNITED JOIE MODEL
 ##############################################################################
 JoieTrainer(
     data=data,
-    #intra_view_models=[model_insnet],
+    # intra_view_models=[model_insnet],
     intra_view_models=[model_insnet, model_ontonet, model_ha],
     cross_view_model=model_cvt,
     train_times=120,

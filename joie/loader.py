@@ -1,8 +1,8 @@
 import logging
-import numpy as np
 from collections import defaultdict
 from random import randint, random, shuffle
 
+import numpy as np
 
 log = logging.getLogger(__name__)
 
@@ -15,26 +15,26 @@ class LoadData:
             gen_corrupted_head=True,
             gen_corrupted_tail=False
     ):
-        self.path_prefix = path_prefix # путь к директории с файлами
-        self.entity_dict = {} # словарь для хранения сущностей-фактов
-        self.rel_dict = {} # словарь для хранения связей (отношений)
-        self.concept_dict = {} # словарь для хранения сущностей-понятий
+        self.path_prefix = path_prefix  # путь к директории с файлами
+        self.entity_dict = {}  # словарь для хранения сущностей-фактов
+        self.rel_dict = {}  # словарь для хранения связей (отношений)
+        self.concept_dict = {}  # словарь для хранения сущностей-понятий
 
-        self.entities_size = 0 # количество сущностей-фактов
-        self.rel_size = 0 # количество сущностей отношений
-        self.concept_size = 0 # количество сущностей онтологий
+        self.entities_size = 0  # количество сущностей-фактов
+        self.rel_size = 0  # количество сущностей отношений
+        self.concept_size = 0  # количество сущностей онтологий
 
-        self.instance_file = instance_file # файл с графом фактов
-        self.ontology_files = ontology_files # файл с графом онтологий
-        self.instype_file = instype_file # файл с графом перекрестных ссылок
+        self.instance_file = instance_file  # файл с графом фактов
+        self.ontology_files = ontology_files  # файл с графом онтологий
+        self.instype_file = instype_file  # файл с графом перекрестных ссылок
 
-        self.triplets = defaultdict(list) # объект словарного типа для хранения триплетов
+        self.triplets = defaultdict(list)  # объект словарного типа для хранения триплетов
         # в отличие от словаря не выдает ошибку если пустой
-        self.all_triplets = 0 # количество триплетов
-        self.gen_corrupted_head = gen_corrupted_head # меняем ли "голову" триплета на случайную
-        self.gen_corrupted_tail = gen_corrupted_tail # меняем ли "хвост" триплета на случайный
+        self.all_triplets = 0  # количество триплетов
+        self.gen_corrupted_head = gen_corrupted_head  # меняем ли "голову" триплета на случайную
+        self.gen_corrupted_tail = gen_corrupted_tail  # меняем ли "хвост" триплета на случайный
 
-        self._file_info = defaultdict(dict) # информация о файлах
+        self._file_info = defaultdict(dict)  # информация о файлах
 
         self._batch_iter = None
 
@@ -44,9 +44,9 @@ class LoadData:
         triplet = triplet.rstrip()
         triplet = triplet.split('\t')
 
-        h = triplet[0] # "входящая" сущность
-        r = triplet[1]# сущность-связь
-        t = triplet[2] # "входящая" сущность
+        h = triplet[0]  # "входящая" сущность
+        r = triplet[1]  # сущность-связь
+        t = triplet[2]  # "входящая" сущность
 
         # отдельная обработка для файла с перекрсетными ссылками
         # if 'InsType' in file:
@@ -122,16 +122,16 @@ class LoadData:
 
     # чтение "сырого" файла
     def _read_file(self, file):
-        log.info('Load of %s started', file) # логирование того какой файл грузим
+        log.info('Load of %s started', file)  # логирование того какой файл грузим
         # построчное чтение открываемого файла + создания триплета из данных в строке
-        with open(f'{self.path_prefix}/{file}', 'r', encoding = 'utf8') as f:
+        with open(f'{self.path_prefix}/{file}', 'r', encoding='utf8') as f:
             i = 0
             for row in f:
                 i += 1
                 yield self.prepare_triplet(row, file)
 
             # информация о триплетах из файлов без перекрестных ссылок
-            #if 'InsType' not in file:
+            # if 'InsType' not in file:
             self._file_info[file] = {
                 'all_triplets': i,
                 'entities_size': len(self.entity_dict),
@@ -169,7 +169,7 @@ class LoadData:
 
     # считываем все файлы из папки
     def read_all_files(self):
-        self.nullify_params() # ставим начальные параметры для множества триплетов
+        self.nullify_params()  # ставим начальные параметры для множества триплетов
         list(self._read_file(self.instance_file))
 
         self.nullify_params()
@@ -195,7 +195,7 @@ class LoadData:
     def load_batch(self, file, nbatches):
         # размер пакета
         batch_size = self.get_triplets_size(file) // nbatches
-        batch_seq_size = batch_size*2
+        batch_seq_size = batch_size * 2
         # инициализация матрицы "входящих" сущностей
         h = self.init_vector(batch_seq_size)
         # инициализация матрицы связей
@@ -222,15 +222,15 @@ class LoadData:
                     h[i + batch_size] = self.neg_entity(h[i], file)
                 else:
                     t[i + batch_size] = self.neg_entity(t[i], file)
-            #меняем "голову"
+            # меняем "голову"
             elif self.gen_corrupted_head:
                 h[i + batch_size] = self.neg_entity(h[i], file)
                 t[i + batch_size] = t[i]
             # меняем "хвост"
             elif self.gen_corrupted_tail:
                 h[i + batch_size] = h[i]
-                #создаем "неправильный" триплет для перекрестных ссылок
-                #можем сменить только одну сущность
+                # создаем "неправильный" триплет для перекрестных ссылок
+                # можем сменить только одну сущность
                 if 'InsType' in file:
                     t[i + batch_size] = self.neg_entity(t[i], 'ontology_files')
             r[i + batch_size] = r[i]
@@ -256,13 +256,13 @@ class LoadData:
     def _write_triplet_size(self, file):
         _dataset = file.split('_')[1]
         # сущности
-        with open(f'{self.path_prefix}/{_dataset}/entity2id.txt', 'w', encoding = 'utf8') as f:
+        with open(f'{self.path_prefix}/{_dataset}/entity2id.txt', 'w', encoding='utf8') as f:
             f.write(f'{self.get_entities_size(file)}\n')
         # связи
-        with open(f'{self.path_prefix}/{_dataset}/relation2id.txt', 'w', encoding = 'utf8') as f:
+        with open(f'{self.path_prefix}/{_dataset}/relation2id.txt', 'w', encoding='utf8') as f:
             f.write(f'{self.get_rel_size(file)}\n')
         # триплеты
-        with open(f'{self.path_prefix}/{_dataset}/train2id.txt', 'w', encoding = 'utf8') as f:
+        with open(f'{self.path_prefix}/{_dataset}/train2id.txt', 'w', encoding='utf8') as f:
             f.write(f'{self.get_triplets_size(file)}\n')
 
     # создание файлов, представляющих триплеты в виде идентификаторов
@@ -280,7 +280,7 @@ class LoadData:
                     tails.add(tail)
                     f.write(f'{head}\t{tail}\t{rel}\n')
 
-            with open(f'{self.path_prefix}/{dataset}/entity2id.txt', 'a+', encoding = 'utf8') as f:
+            with open(f'{self.path_prefix}/{dataset}/entity2id.txt', 'a+', encoding='utf8') as f:
                 for key, value in self.get_ent_dict(file).items():
                     if value in heads or value in tails:
                         f.write(f'{key}\t{value}\n')
@@ -289,7 +289,7 @@ class LoadData:
                 #         if value in heads or value in tails:
                 #             f.write(f'{key}\t{value}\n')
 
-            with open(f'{self.path_prefix}/{dataset}/relation2id.txt', 'a+', encoding = 'utf8') as f:
+            with open(f'{self.path_prefix}/{dataset}/relation2id.txt', 'a+', encoding='utf8') as f:
                 for key, value in self.get_rel_dict(file).items():
                     if value in rels:
                         f.write(f'{key}\t{value}\n')
@@ -297,18 +297,18 @@ class LoadData:
     # создание файлов, представляющих триплеты в виде идентификаторов
     # для тестирования модели
     def create_test_id_files(self):
-        valid_size = 0 # размер валидационной  выборки
-        test_size = 0 # размер тестовой выборки
+        valid_size = 0  # размер валидационной  выборки
+        test_size = 0  # размер тестовой выборки
         # список файлов
-        files =  [self.instance_file, *self.ontology_files, self.instype_file]
+        files = [self.instance_file, *self.ontology_files, self.instype_file]
         # проход по всем файлам
         for file in files:
             file_test = file.replace('train', 'test')
             _dataset = file.split('_')[1]
             _triplets = []
             # читаем тестовую выборку из файла в "сыром" виде
-            with open(f'{self.path_prefix}/{file_test}', 'r', encoding = 'utf8') as f:
-                for row in f: # построчно
+            with open(f'{self.path_prefix}/{file_test}', 'r', encoding='utf8') as f:
+                for row in f:  # построчно
                     triplet = row.rstrip()
                     triplet = triplet.split('\t')
                     # if 'InsType' in file: # для файла с перекрестными ссылками
@@ -317,15 +317,15 @@ class LoadData:
                     #         0,
                     #         self.get_ent_dict('ontology_files')[triplet[2]]
                     #     ))
-                    #else:
-                        # для файла с онтологиями
+                    # else:
+                    # для файла с онтологиями
                     h = triplet[0]
-                    #print('Test h:', h)
+                    # print('Test h:', h)
                     # "входящая" сущность
                     r = triplet[1]  # сущность-связь
-                    #print('Test r:', r)
+                    # print('Test r:', r)
                     t = triplet[2]
-                    #print('Test t:', t)
+                    # print('Test t:', t)
                     if h not in self.entity_dict:
                         # получаем идентификатор для нее
                         self.entity_dict[h] = self.entities_size
@@ -363,22 +363,22 @@ class LoadData:
             valid_data = _triplets[:_valid_size]
 
             # файл для тестирования с индексами элементов триплетов
-            with open(f'{self.path_prefix}/{_dataset}/test2id.txt', 'w', encoding = 'utf8') as f:
+            with open(f'{self.path_prefix}/{_dataset}/test2id.txt', 'w', encoding='utf8') as f:
                 f.write(f'{len(test_data)}\n')
                 for head, rel, tail in test_data:
                     border = self.get_entities_size(file)
-                    if _dataset == 'InsType' and head > border-1:
-                        f.write(f'{head-border}\t{tail}\t{rel}\n')
+                    if _dataset == 'InsType' and head > border - 1:
+                        f.write(f'{head - border}\t{tail}\t{rel}\n')
                     else:
                         f.write(f'{head}\t{tail}\t{rel}\n')
 
             # файл для валидации с индексами элементов триплетов
-            with open(f'{self.path_prefix}/{_dataset}/valid2id.txt', 'w', encoding = 'utf8') as f:
+            with open(f'{self.path_prefix}/{_dataset}/valid2id.txt', 'w', encoding='utf8') as f:
                 f.write(f'{len(valid_data)}\n')
                 for head, rel, tail in valid_data:
                     border = self.get_entities_size(file)
-                    if _dataset == 'InsType' and head > border-1:
-                        f.write(f'{head-border}\t{tail}\t{rel}\n')
+                    if _dataset == 'InsType' and head > border - 1:
+                        f.write(f'{head - border}\t{tail}\t{rel}\n')
                     else:
                         f.write(f'{head}\t{tail}\t{rel}\n')
 

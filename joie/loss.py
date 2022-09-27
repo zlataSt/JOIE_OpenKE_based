@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 
+
 # родительских класс для функций потерь
 class Loss(nn.Module, ABC):
     def __init__(self, margin=2.5):
@@ -17,6 +18,7 @@ class Loss(nn.Module, ABC):
         score = self.forward(*args, **kwargs)
         return score.cpu().data.numpy()
 
+
 # лоссы для TransE, CG, CT
 class MarginLoss(Loss):
 
@@ -25,8 +27,9 @@ class MarginLoss(Loss):
 
     def forward(self, p_score, n_score):
         return (
-           torch.max(p_score - n_score, -self.margin)
-        ).mean() + self.margin
+                   torch.max(p_score - n_score, -self.margin)
+               ).mean() + self.margin
+
 
 # Лоссы для DistMult, HolE
 class SoftPlusLoss(Loss):
@@ -37,9 +40,10 @@ class SoftPlusLoss(Loss):
 
     def forward(self, p_score, n_score):
         return (
-            self.criterion(-p_score).mean() +
-            self.criterion(n_score).mean()
-        ) / 2
+                       self.criterion(-p_score).mean() +
+                       self.criterion(n_score).mean()
+               ) / 2
+
 
 # Лоссы для внутренней модели (если не нужна иерархичность обнуляем соответсв. параметры
 class IntraViewModelLoss(nn.Module):
@@ -57,10 +61,11 @@ class IntraViewModelLoss(nn.Module):
 
     def forward(self, instance_loss, ontology_loss, ha_loss):
         return (
-            instance_loss +
-            self.margin_ontonet * ontology_loss +
-            self.margin_ha * ha_loss
+                instance_loss +
+                self.margin_ontonet * ontology_loss +
+                self.margin_ha * ha_loss
         )
+
 
 # общие лоссы для модели JOIE : J = J_Intra + w*J_Cross
 class JoieLoss(Loss):
@@ -70,6 +75,6 @@ class JoieLoss(Loss):
 
     def forward(self, cross_view_loss, intra_view_loss):
         return (
-            intra_view_loss +
-            self.margin * cross_view_loss
+                intra_view_loss +
+                self.margin * cross_view_loss
         )
